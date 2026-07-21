@@ -1,0 +1,107 @@
+# Supervision 企业智能督办平台 —— 生产编排
+# 对外端口：8002（Nginx 反代前端 + /api 后端）
+# 数据库 / Redis / RabbitMQ 仅容器间互通，不暴露到宿主机公网。
+#
+# 启动： docker compose up -d --build
+# 停止： docker compose down
+# 日志： docker compose logs -f api
+
+services:
+  mysql:
+    image: mysql:8.0.36
+    container_name: supervision-mysql
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --innodb-buffer-pool-size=64M
+    environment:
+      MYSQL_ROOT_PASSWORD: [removed-secret]
+      MYSQL_DATABASE: supervision
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./build/backend/src/main/resources/db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p[removed-secret]"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: supervision-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: supervision-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: supervision
+      RABBITMQ_DEFAULT_PASS: [removed-secret]
+    volumes:
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+  api:
+    build:
+      context: ./build/backend
+      dockerfile: Dockerfile
+    image: supervision-api:latest
+    container_name: supervision-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: supervision
+      DB_USERNAME: supervision
+      DB_PASSWORD: [removed-secret]
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: supervision
+      RABBITMQ_PASSWORD: [removed-secret]
+      # Spring Boot 规范环境变量（确保绑定到 spring.rabbitmq.*）
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: "5672"
+      SPRING_RABBITMQ_USERNAME: supervision
+      SPRING_RABBITMQ_PASSWORD: [removed-secret]
+      TZ: Asia/Shanghai
+      # 针对 2G 内存服务器收紧堆内存
+      JAVA_OPTS: "-Xms256m -Xmx512m -XX:+UseG1GC -Duser.timezone=Asia/Shanghai"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/localhost/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    image: supervision-web:latest
+    container_name: supervision-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "8002:80"
+
+volumes:
+  mysql-data:

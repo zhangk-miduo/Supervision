@@ -1,0 +1,8 @@
+**/node_modules
+**/dist
+**/target
+.mvn
+.workbuddy
+.git
+**/*.log
+*.md

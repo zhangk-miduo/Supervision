@@ -1,0 +1,24 @@
+# ---- Build artifacts ----
+build/web/node_modules/
+build/web/dist/
+build/backend/target/
+.mvn/
+
+# ---- Local working memory / project data (not source) ----
+.workbuddy/
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ---- Logs ----
+*.log
+deploy.log
+web_build.log
+
+# ---- Java / IDE ----
+*.class
+.idea/
+*.iml

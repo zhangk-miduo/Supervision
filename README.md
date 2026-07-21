@@ -630,3 +630,33 @@ supervision-platform
 ```
 
 
+
+---
+
+## 部署
+
+完整部署与运维说明见 **[DEPLOYMENT.md](./DEPLOYMENT.md)**。
+
+快速上线（需本机已启动 Docker 守护进程）：
+
+```bash
+docker compose up -d --build
+```
+
+- 管理端：http://localhost
+- 后端 API：http://localhost/api （健康检查 http://localhost/api/health ）
+- RabbitMQ 控制台：http://localhost:15672
+
+仓库实际结构：
+
+```
+Supervision/
+├── docker-compose.yml        # 服务编排
+├── docker/nginx/default.conf  # 前端反代
+├── build/backend/           # Spring Boot 3.2 / Java 17
+├── build/web/               # Vue3 + TS + Element Plus
+├── doc/                    # 产品 / 技术分析文档
+├── specs/                  # 需求规格（Ralph 格式）
+├── IMPLEMENTATION_PLAN.md  # 实施计划
+└── DEPLOYMENT.md           # 部署指南
+```
