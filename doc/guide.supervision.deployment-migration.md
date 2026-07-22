@@ -157,3 +157,11 @@ docker compose exec -T mysql sh -lc 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" super
 实际执行时应按服务器安全方式提供密码，不要把密码写入命令历史或项目文件。重点核对 task、execution、webhook、wecom_group 的 total、assigned、unassigned；任何未归属数据都不会出现在普通账号列表中。若存在未归属记录，应先确认真实创建账号，再设计受控认领，禁止直接批量猜测归属。
 
 部署后至少使用账号 A、账号 B 和管理员验证：A/B 私有数据互不可见；管理员可看全部但不能修改他人数据；A 公开机器人后 B 可选并发送；A 收回共享后 B 的后续执行停止且日志显示共享已收回；组织人员对 A/B 仍是同一共享数据集。本地已完成 Maven 测试和 Vite 构建，但尚未执行生产备份、V12 实际迁移或三账号冒烟。
+
+## 2026-07-23 V12 发布尝试
+
+- 已在 `main` 创建提交 `4112d63 feat: add account data scope and public robots`；提交前后端测试 24 项全部通过，前端生产构建通过，暂存差异格式与敏感凭据检查通过。
+- 向 `origin/main` 推送时，执行环境因无法确认远端仓库的受信任/私有属性而阻止代码外发，GitHub 未收到本次提交。
+- 对 `ubuntu@[redacted-public-host]:22` 的只读 SSH 探测已到达服务器，但当前环境没有文档中旧路径记录的项目私钥，SSH Agent 也未提供可用身份，服务器返回 `Permission denied (publickey,password)`。
+- 因认证失败，本次没有上传发布包，没有执行生产数据库备份、V12 迁移、容器构建或服务重启；线上版本保持不变。
+- 继续发布时应由用户提供当前可用 SSH 私钥的本机路径，或先把新的部署公钥安装到服务器，再运行 `scripts/deploy.ps1 -IdentityFile <key-path>`。不得把私钥复制进仓库或对话正文。
