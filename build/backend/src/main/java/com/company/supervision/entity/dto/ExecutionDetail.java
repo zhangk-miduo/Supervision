@@ -1,0 +1,1 @@
+package com.company.supervision.entity.dto;import com.company.supervision.domain.model.messaging.MessageDelivery;import lombok.Data;import java.util.List;@Data public class ExecutionDetail{ExecutionSummary summary;List<MessageDelivery> deliveries;}

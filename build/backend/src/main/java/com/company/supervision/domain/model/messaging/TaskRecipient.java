@@ -1,0 +1,1 @@
+package com.company.supervision.domain.model.messaging;import com.baomidou.mybatisplus.annotation.*;import lombok.Data;@Data @TableName("supervision_task_recipient")public class TaskRecipient{@TableId(type=IdType.AUTO)Long id;Long taskId;String recipientType;String recipientRef;String mentionMode;}

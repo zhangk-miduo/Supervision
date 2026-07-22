@@ -1,10 +1,10 @@
-# Supervision 企业智能督办平台 —— 生产编排
-# 对外端口：8002（Nginx 反代前端 + /api 后端）
-# 数据库 / Redis / RabbitMQ 仅容器间互通，不暴露到宿主机公网。
+# Supervision 浼佷笟鏅鸿兘鐫ｅ姙骞冲彴 鈥斺€?鐢熶骇缂栨帓
+# 瀵瑰绔彛锛?002锛圢ginx 鍙嶄唬鍓嶇 + /api 鍚庣锛?
+# 鏁版嵁搴?/ Redis / RabbitMQ 浠呭鍣ㄩ棿浜掗€氾紝涓嶆毚闇插埌瀹夸富鏈哄叕缃戙€?
 #
-# 启动： docker compose up -d --build
-# 停止： docker compose down
-# 日志： docker compose logs -f api
+# 鍚姩锛?docker compose up -d --build
+# 鍋滄锛?docker compose down
+# 鏃ュ織锛?docker compose logs -f api
 
 services:
   mysql:
@@ -57,6 +57,11 @@ services:
     image: supervision-api:latest
     container_name: supervision-api
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     depends_on:
       mysql:
         condition: service_healthy
@@ -70,19 +75,22 @@ services:
       DB_NAME: supervision
       DB_USERNAME: supervision
       DB_PASSWORD: [removed-secret]
+      SUPERVISION_CRYPTO_KEY: ${SUPERVISION_CRYPTO_KEY}
+      SUPERVISION_ADMIN_USERNAME: ${SUPERVISION_ADMIN_USERNAME:-admin}
+      SUPERVISION_ADMIN_PASSWORD: ${SUPERVISION_ADMIN_PASSWORD:-}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: "5672"
       RABBITMQ_USERNAME: supervision
       RABBITMQ_PASSWORD: [removed-secret]
-      # Spring Boot 规范环境变量（确保绑定到 spring.rabbitmq.*）
+      # Spring Boot 瑙勮寖鐜鍙橀噺锛堢‘淇濈粦瀹氬埌 spring.rabbitmq.*锛?
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: "5672"
       SPRING_RABBITMQ_USERNAME: supervision
       SPRING_RABBITMQ_PASSWORD: [removed-secret]
       TZ: Asia/Shanghai
-      # 针对 2G 内存服务器收紧堆内存
+      # 閽堝 2G 鍐呭瓨鏈嶅姟鍣ㄦ敹绱у爢鍐呭瓨
       JAVA_OPTS: "-Xms256m -Xmx512m -XX:+UseG1GC -Duser.timezone=Asia/Shanghai"
     healthcheck:
       test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/localhost/8080"]
@@ -97,6 +105,11 @@ services:
     image: supervision-web:latest
     container_name: supervision-web
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     depends_on:
       api:
         condition: service_healthy

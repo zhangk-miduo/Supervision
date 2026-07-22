@@ -10,10 +10,9 @@ Build image and run via compose:
 docker compose build supervision-api
 docker compose up -d mysql redis rabbitmq supervision-api
 ```
-Compile/verify inside the maven builder container (equiv. of `mvn`):
+Compile and test through the backend Docker build (the Dockerfile runs Maven tests):
 ```
-docker compose run --rm maven mvn -B -q compile
-docker compose run --rm maven mvn -B -q test
+docker compose build api
 ```
 
 ### Frontend
@@ -33,3 +32,11 @@ All source and config under `build/`. The canonical deployable artifact is produ
 `docker compose up -d` (mysql + redis + rabbitmq + supervision-api + nginx).
 Local JDK is 8; the backend targets Java 17 and is compiled via the `maven:3.9-eclipse-temurin-17`
 multi-stage image defined in `build/backend/Dockerfile`.
+
+## Conversation Documentation
+
+- Every conversation concerning this repository must be summarized into the project documentation under `doc/` before the task is considered complete.
+- The summary must capture, as applicable: user requirements, conclusions and decisions, important evidence, affected modules, risks and open questions, and recommended or completed next actions.
+- Update an existing relevant document when one exists; otherwise create a document using the naming and structure rules in `doc/rule.supervision.conversation-documentation.md`.
+- Do not treat chat history as the only source of truth. Important corrections or changed decisions must be reflected in the project document during the same task.
+- Purely social messages or conversations unrelated to this repository do not require documentation.

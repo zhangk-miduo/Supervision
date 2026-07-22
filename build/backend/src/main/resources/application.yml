@@ -21,6 +21,11 @@ spring:
       port: ${RABBITMQ_PORT:5672}
       username: ${RABBITMQ_USERNAME:guest}
       password: ${RABBITMQ_PASSWORD:}
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
   quartz:
     job-store-type: jdbc
     jdbc:
@@ -39,7 +44,6 @@ spring:
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       id-type: auto
@@ -48,3 +52,9 @@ logging:
   level:
     com.company.supervision: info
     org.springframework.web: warn
+
+supervision:
+  crypto-key: ${SUPERVISION_CRYPTO_KEY:[removed-secret]}
+  bootstrap-admin:
+    username: ${SUPERVISION_ADMIN_USERNAME:admin}
+    password: ${SUPERVISION_ADMIN_PASSWORD:}

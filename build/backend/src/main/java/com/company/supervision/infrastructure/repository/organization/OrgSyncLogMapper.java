@@ -1,0 +1,1 @@
+package com.company.supervision.infrastructure.repository.organization; import com.baomidou.mybatisplus.core.mapper.BaseMapper; import com.company.supervision.domain.model.organization.OrgSyncLog; import org.apache.ibatis.annotations.Mapper; @Mapper public interface OrgSyncLogMapper extends BaseMapper<OrgSyncLog>{}

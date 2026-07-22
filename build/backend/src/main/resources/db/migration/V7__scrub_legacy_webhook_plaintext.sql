@@ -1,0 +1,1 @@
+UPDATE supervision_wechat_robot SET webhook_url = '******' WHERE webhook_url IS NOT NULL AND webhook_url <> '******';

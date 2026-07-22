@@ -1,24 +1,3 @@
 package com.company.supervision.infrastructure.scheduler;
-
-import com.company.supervision.domain.service.TaskExecutionEngine;
-import com.company.supervision.infrastructure.config.SpringContextHolder;
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-
-/**
- * Quartz 作业：触发时加载任务节点链并执行。通过 SpringContextHolder 获取引擎 Bean。
- */
-public class SupervisionJob implements Job {
-
-    @Override
-    public void execute(JobExecutionContext context) throws JobExecutionException {
-        Long taskId = context.getJobDetail().getJobDataMap().getLong("taskId");
-        TaskExecutionEngine engine = SpringContextHolder.getBean(TaskExecutionEngine.class);
-        try {
-            engine.execute(taskId);
-        } catch (Exception e) {
-            throw new JobExecutionException("任务执行失败 taskId=" + taskId, e, false);
-        }
-    }
-}
+import com.company.supervision.application.scheduling.NationalWorkdayCalendar;import com.company.supervision.domain.model.TaskSchedule;import com.company.supervision.domain.service.TaskExecutionEngine;import com.company.supervision.infrastructure.config.SpringContextHolder;import com.company.supervision.infrastructure.repository.ScheduleMapper;import com.fasterxml.jackson.databind.*;import org.quartz.*;import java.time.*;import java.util.concurrent.*;
+public class SupervisionJob implements Job{public void execute(JobExecutionContext context)throws JobExecutionException{Long taskId=context.getJobDetail().getJobDataMap().getLong("taskId");TaskExecutionEngine engine=SpringContextHolder.getBean(TaskExecutionEngine.class);ScheduleMapper mapper=SpringContextHolder.getBean(ScheduleMapper.class);ObjectMapper json=SpringContextHolder.getBean(ObjectMapper.class);TaskSchedule s=mapper.selectByTaskId(taskId);if(s!=null&&"WORKDAY".equals(s.getScheduleMode())){NationalWorkdayCalendar c=SpringContextHolder.getBean(NationalWorkdayCalendar.class);ZoneId z=ZoneId.of(s.getTimezone()==null?"Asia/Shanghai":s.getTimezone());LocalDate today=LocalDate.now(z);NationalWorkdayCalendar.Decision d=c.decision(today);if(d!=NationalWorkdayCalendar.Decision.WORKDAY){engine.recordSkipped(taskId,d.name(),c.reason(today));return;}}int retries=0,delay=60,timeout=600;String backoff="FIXED";try{if(s!=null&&s.getRetryPolicyJson()!=null){JsonNode n=json.readTree(s.getRetryPolicyJson());retries=n.path("maxRetries").asInt(0);delay=n.path("delaySeconds").asInt(60);timeout=n.path("timeoutSeconds").asInt(600);backoff=n.path("backoff").asText("FIXED");}}catch(Exception ignore){}Exception last=null;for(int attempt=0;attempt<=retries;attempt++){try{CompletableFuture.supplyAsync(()->engine.execute(taskId,"SCHEDULED")).get(timeout,TimeUnit.SECONDS);return;}catch(Exception e){last=e;if(attempt<retries)try{long seconds="EXPONENTIAL".equals(backoff)?delay*(1L<<attempt):delay;Thread.sleep(Math.min(seconds,300)*1000);}catch(InterruptedException x){Thread.currentThread().interrupt();break;}}}throw new JobExecutionException("Task execution failed after retries taskId="+taskId,last,false);}}

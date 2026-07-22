@@ -1,15 +1,1 @@
-package com.company.supervision.entity.dto;
-
-import com.company.supervision.domain.model.AutomationTask;
-import com.company.supervision.domain.model.TaskNode;
-import com.company.supervision.domain.model.TaskSchedule;
-import lombok.Data;
-
-import java.util.List;
-
-@Data
-public class TaskDetail {
-    private AutomationTask task;
-    private List<TaskNode> nodes;
-    private TaskSchedule schedule;
-}
+package com.company.supervision.entity.dto;import com.company.supervision.domain.model.*;import com.company.supervision.domain.model.messaging.TaskRecipient;import lombok.Data;import java.util.*;@Data public class TaskDetail{private AutomationTask task;private List<TaskNode>nodes;private TaskSchedule schedule;private List<TaskRecipient>recipients;}

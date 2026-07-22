@@ -1,0 +1,1 @@
+package com.company.supervision.infrastructure.security;import org.junit.jupiter.api.Test;import static org.assertj.core.api.Assertions.*;class SensitiveDataRedactorTest{@Test void redactsWebhookAndCredentials(){String s=SensitiveDataRedactor.redact("https://x?key=abc Authorization: Bearer token secret=value");assertThat(s).doesNotContain("abc","token","value");}}

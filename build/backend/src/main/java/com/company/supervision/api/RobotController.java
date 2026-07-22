@@ -5,12 +5,14 @@ import com.company.supervision.application.RobotAppService;
 import com.company.supervision.domain.model.WechatRobot;
 import com.company.supervision.entity.dto.ApiResult;
 import com.company.supervision.entity.dto.RobotRequest;
+import com.company.supervision.entity.dto.SelectableRobot;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/robots")
 public class RobotController {
-
     private final RobotAppService robotAppService;
 
     public RobotController(RobotAppService robotAppService) {
@@ -19,7 +21,7 @@ public class RobotController {
 
     @PostMapping
     public ApiResult<Long> create(@RequestBody RobotRequest req) {
-        return ApiResult.ok(robotAppService.createRobot(req.getRobotId(), req.getName(), req.getWebhookUrl(), req.getTemplate()));
+        return ApiResult.ok(robotAppService.createRobot(req.getRobotId(), req.getName(), req.getGroupName(), req.getPushName(), req.getWebhookUrl(), req.getTemplate(), req.getStatus(), req.getRemark()));
     }
 
     @GetMapping
@@ -29,6 +31,11 @@ public class RobotController {
         return ApiResult.ok(robotAppService.listRobots(name, page, size));
     }
 
+    @GetMapping("/selectable")
+    public ApiResult<List<SelectableRobot>> selectable() {
+        return ApiResult.ok(robotAppService.listSelectableRobots());
+    }
+
     @GetMapping("/{id}")
     public ApiResult<WechatRobot> get(@PathVariable Long id) {
         return ApiResult.ok(robotAppService.getRobot(id));
@@ -36,7 +43,7 @@ public class RobotController {
 
     @PutMapping("/{id}")
     public ApiResult<Void> update(@PathVariable Long id, @RequestBody RobotRequest req) {
-        robotAppService.updateRobot(id, req.getName(), req.getWebhookUrl(), req.getTemplate());
+        robotAppService.updateRobot(id, req.getName(), req.getGroupName(), req.getPushName(), req.getWebhookUrl(), req.getTemplate(), req.getStatus(), req.getRemark());
         return ApiResult.ok();
     }
 

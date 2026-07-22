@@ -1,0 +1,1 @@
+package com.company.supervision.infrastructure.repository.scheduling;import com.baomidou.mybatisplus.core.mapper.BaseMapper;import com.company.supervision.domain.model.scheduling.WorkdayCalendarYear;import org.apache.ibatis.annotations.Mapper;@Mapper public interface WorkdayCalendarYearMapper extends BaseMapper<WorkdayCalendarYear>{}

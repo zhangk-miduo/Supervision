@@ -35,16 +35,16 @@
       <template #header>最近执行</template>
       <el-table :data="recent" v-loading="loading" size="small">
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="taskId" label="任务ID" width="90" />
+        <el-table-column prop="taskName" label="任务名称" width="90" />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.status === 0 ? 'success' : (row.status === 2 ? 'warning' : 'danger')" size="small">
-              {{ row.status === 0 ? '成功' : (row.status === 2 ? '执行中' : '失败') }}
+            <el-tag :type="row.status === 'SUCCESS' ? 'success' : (row.status === 'RUNNING' ? 'warning' : 'danger')" size="small">
+              {{ row.statusLabel }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="startTime" label="开始时间" />
-        <el-table-column prop="result" label="结果" show-overflow-tooltip />
+        <el-table-column prop="resultSummary" label="结果" show-overflow-tooltip />
       </el-table>
     </el-card>
   </div>
@@ -61,7 +61,7 @@ const loading = ref(false)
 const successRate = computed(() => {
   const slice = recent.value.slice(0, 100)
   if (!slice.length) return 0
-  const ok = slice.filter(r => r.status === 0).length
+  const ok = slice.filter(r => r.status === 'SUCCESS').length
   return ((ok / slice.length) * 100).toFixed(1)
 })
 
