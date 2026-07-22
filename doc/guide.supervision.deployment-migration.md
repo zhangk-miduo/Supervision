@@ -131,3 +131,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\deploy.ps1 -IdentityFile "$en
 ## 2026-07-22 生产升级
 
 执行 scripts/deploy.ps1 -IdentityFile <ssh-key> 完成升级，备份目录为 /opt/backups/supervision-20260722-221644。Flyway V11 成功，五容器健康，外部地址为 http://[redacted-public-host]:8002/。API/Web 已配置 Docker json-file 日志轮转（10MB × 3）；此前约 25GB 的 supervision-api 历史容器日志已清空且不可恢复，数据库、代码与备份未删除。
+## 2026-07-22 GitHub 签入与最终发布
+
+- 主功能提交：54eefb2 feat: enhance WeCom scheduling and organization，已推送至 origin/main（https://github.com/zhangk-miduo/Supervision.git）。
+- GitHub CLI 在本机不可用且安装进程无进展，因此未创建 PR；本次按用户明确要求，使用仓库现有 Git 凭据直接推送 main。
+- 推送前完成 git diff --cached --check 和敏感信息扫描，未发现服务器密码、管理员密码或 SSH 私钥进入版本库。
+- 推送后再次运行 scripts/deploy.ps1，确保服务器发布内容与 GitHub 最终提交一致；部署结果和健康检查见本节后续记录。
