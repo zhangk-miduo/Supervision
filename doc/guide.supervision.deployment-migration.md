@@ -161,7 +161,7 @@ docker compose exec -T mysql sh -lc 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" super
 ## 2026-07-23 V12 发布尝试
 
 - 已在 `main` 创建提交 `4112d63 feat: add account data scope and public robots`；提交前后端测试 24 项全部通过，前端生产构建通过，暂存差异格式与敏感凭据检查通过。
-- 向 `origin/main` 推送时，执行环境因无法确认远端仓库的受信任/私有属性而阻止代码外发，GitHub 未收到本次提交。
+- 用户已明确授权向 `https://github.com/zhangk-miduo/Supervision.git` 推送。随后使用默认 HTTPS 两次、HTTP/1.1 兼容模式一次执行推送，均因当前环境到 GitHub 443 的连接被重置或无法建立而失败；GitHub 仍未收到本次提交。
 - 对 `ubuntu@[redacted-public-host]:22` 的只读 SSH 探测已到达服务器，但当前环境没有文档中旧路径记录的项目私钥，SSH Agent 也未提供可用身份，服务器返回 `Permission denied (publickey,password)`。
 - 因认证失败，本次没有上传发布包，没有执行生产数据库备份、V12 迁移、容器构建或服务重启；线上版本保持不变。
 - 继续发布时应由用户提供当前可用 SSH 私钥的本机路径，或先把新的部署公钥安装到服务器，再运行 `scripts/deploy.ps1 -IdentityFile <key-path>`。不得把私钥复制进仓库或对话正文。
