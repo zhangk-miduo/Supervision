@@ -2,54 +2,21 @@ package com.company.supervision.api;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.company.supervision.application.TaskAppService;
-import com.company.supervision.domain.model.AutomationTask;
-import com.company.supervision.domain.model.TaskExecution;
-import com.company.supervision.entity.dto.ApiResult;
-import com.company.supervision.entity.dto.TaskCreateRequest;
-import com.company.supervision.entity.dto.TaskDetail;
+import com.company.supervision.application.identity.AuthService;
+import com.company.supervision.entity.dto.*;
+import com.company.supervision.infrastructure.security.AuthInterceptor;
+import com.company.supervision.infrastructure.security.DataScope;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
-@RequestMapping("/tasks")
+@RestController @RequestMapping("/tasks")
 public class TaskController {
-
-    private final TaskAppService taskAppService;
-
-    public TaskController(TaskAppService taskAppService) {
-        this.taskAppService = taskAppService;
-    }
-
-    @PostMapping
-    public ApiResult<Long> create(@RequestBody TaskCreateRequest req) {
-        return ApiResult.ok(taskAppService.createTask(req));
-    }
-
-    @GetMapping
-    public ApiResult<IPage<AutomationTask>> list(@RequestParam(required = false) String name,
-                                                 @RequestParam(defaultValue = "1") int page,
-                                                 @RequestParam(defaultValue = "20") int size) {
-        return ApiResult.ok(taskAppService.listTasks(name, page, size));
-    }
-
-    @GetMapping("/{id}")
-    public ApiResult<TaskDetail> get(@PathVariable Long id) {
-        return ApiResult.ok(taskAppService.getTask(id));
-    }
-
-    @PutMapping("/{id}")
-    public ApiResult<Void> update(@PathVariable Long id, @RequestBody TaskCreateRequest req) {
-        taskAppService.updateTask(id, req);
-        return ApiResult.ok();
-    }
-
-    @DeleteMapping("/{id}")
-    public ApiResult<Void> delete(@PathVariable Long id) {
-        taskAppService.deleteTask(id);
-        return ApiResult.ok();
-    }
-
-    @PostMapping("/{id}/execute")
-    public ApiResult<Long> execute(@PathVariable Long id) {
-        return ApiResult.ok(taskAppService.executeNow(id));
-    }
+    private final TaskAppService service; public TaskController(TaskAppService service){this.service=service;}
+    private DataScope scope(HttpServletRequest r){return DataScope.from((AuthService.SessionInfo)r.getAttribute(AuthInterceptor.SESSION_ATTRIBUTE));}
+    @PostMapping public ApiResult<Long>create(@RequestBody TaskCreateRequest req,HttpServletRequest r){return ApiResult.ok(service.createTask(req,scope(r)));}
+    @GetMapping public ApiResult<IPage<TaskView>>list(@RequestParam(required=false)String name,@RequestParam(required=false)Long creatorAccountId,@RequestParam(defaultValue="1")int page,@RequestParam(defaultValue="20")int size,HttpServletRequest r){return ApiResult.ok(service.listTasks(name,creatorAccountId,page,size,scope(r)));}
+    @GetMapping("/{id}")public ApiResult<TaskDetail>get(@PathVariable Long id,HttpServletRequest r){return ApiResult.ok(service.getTask(id,scope(r)));}
+    @PutMapping("/{id}")public ApiResult<Void>update(@PathVariable Long id,@RequestBody TaskCreateRequest req,HttpServletRequest r){service.updateTask(id,req,scope(r));return ApiResult.ok();}
+    @DeleteMapping("/{id}")public ApiResult<Void>delete(@PathVariable Long id,HttpServletRequest r){service.deleteTask(id,scope(r));return ApiResult.ok();}
+    @PostMapping("/{id}/execute")public ApiResult<Long>execute(@PathVariable Long id,HttpServletRequest r){return ApiResult.ok(service.executeNow(id,scope(r)));}
 }

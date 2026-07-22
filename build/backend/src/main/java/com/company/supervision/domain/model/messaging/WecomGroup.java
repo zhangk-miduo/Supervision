@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 public class WecomGroup {
     @TableId(type = IdType.AUTO) private Long id;
     private String tenantKey;
+    private Long ownerAccountId;
     private String groupName;
     private Integer status;
     private String remark;

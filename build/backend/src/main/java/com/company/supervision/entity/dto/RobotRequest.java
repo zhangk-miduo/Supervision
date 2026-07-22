@@ -12,4 +12,5 @@ public class RobotRequest {
     private String template;
     private Integer status;
     private String remark;
+    private Boolean isPublic;
 }

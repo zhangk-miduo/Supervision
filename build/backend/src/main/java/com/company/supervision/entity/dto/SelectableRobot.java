@@ -11,4 +11,8 @@ public class SelectableRobot {
     private String groupName;
     private String pushName;
     private String label;
+    private Boolean isPublic;
+    private Long creatorAccountId;
+    private String creatorUsername;
+    private String creatorDisplayName;
 }

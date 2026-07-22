@@ -2,59 +2,24 @@ package com.company.supervision.api;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.company.supervision.application.RobotAppService;
-import com.company.supervision.domain.model.WechatRobot;
-import com.company.supervision.entity.dto.ApiResult;
-import com.company.supervision.entity.dto.RobotRequest;
-import com.company.supervision.entity.dto.SelectableRobot;
+import com.company.supervision.application.identity.AuthService;
+import com.company.supervision.entity.dto.*;
+import com.company.supervision.infrastructure.security.AuthInterceptor;
+import com.company.supervision.infrastructure.security.DataScope;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
+import java.util.*;
 
-import java.util.List;
-
-@RestController
-@RequestMapping("/robots")
+@RestController @RequestMapping("/robots")
 public class RobotController {
-    private final RobotAppService robotAppService;
-
-    public RobotController(RobotAppService robotAppService) {
-        this.robotAppService = robotAppService;
-    }
-
-    @PostMapping
-    public ApiResult<Long> create(@RequestBody RobotRequest req) {
-        return ApiResult.ok(robotAppService.createRobot(req.getRobotId(), req.getName(), req.getGroupName(), req.getPushName(), req.getWebhookUrl(), req.getTemplate(), req.getStatus(), req.getRemark()));
-    }
-
-    @GetMapping
-    public ApiResult<IPage<WechatRobot>> list(@RequestParam(required = false) String name,
-                                              @RequestParam(defaultValue = "1") int page,
-                                              @RequestParam(defaultValue = "20") int size) {
-        return ApiResult.ok(robotAppService.listRobots(name, page, size));
-    }
-
-    @GetMapping("/selectable")
-    public ApiResult<List<SelectableRobot>> selectable() {
-        return ApiResult.ok(robotAppService.listSelectableRobots());
-    }
-
-    @GetMapping("/{id}")
-    public ApiResult<WechatRobot> get(@PathVariable Long id) {
-        return ApiResult.ok(robotAppService.getRobot(id));
-    }
-
-    @PutMapping("/{id}")
-    public ApiResult<Void> update(@PathVariable Long id, @RequestBody RobotRequest req) {
-        robotAppService.updateRobot(id, req.getName(), req.getGroupName(), req.getPushName(), req.getWebhookUrl(), req.getTemplate(), req.getStatus(), req.getRemark());
-        return ApiResult.ok();
-    }
-
-    @DeleteMapping("/{id}")
-    public ApiResult<Void> delete(@PathVariable Long id) {
-        robotAppService.deleteRobot(id);
-        return ApiResult.ok();
-    }
-
-    @PostMapping("/{id}/test")
-    public ApiResult<String> test(@PathVariable Long id) {
-        return ApiResult.ok(robotAppService.testRobot(id));
-    }
+    private final RobotAppService service;public RobotController(RobotAppService service){this.service=service;}
+    private DataScope scope(HttpServletRequest r){return DataScope.from((AuthService.SessionInfo)r.getAttribute(AuthInterceptor.SESSION_ATTRIBUTE));}
+    @PostMapping public ApiResult<Long>create(@RequestBody RobotRequest req,HttpServletRequest r){return ApiResult.ok(service.createRobot(req,scope(r)));}
+    @GetMapping public ApiResult<IPage<RobotView>>list(@RequestParam(required=false)String name,@RequestParam(required=false)String view,@RequestParam(required=false)Long creatorAccountId,@RequestParam(defaultValue="1")int page,@RequestParam(defaultValue="20")int size,HttpServletRequest r){return ApiResult.ok(service.listRobots(name,view,creatorAccountId,page,size,scope(r)));}
+    @GetMapping("/selectable")public ApiResult<List<SelectableRobot>>selectable(HttpServletRequest r){return ApiResult.ok(service.listSelectableRobots(scope(r)));}
+    @GetMapping("/{id}/usage-impact")public ApiResult<Map<String,Object>>impact(@PathVariable Long id,HttpServletRequest r){return ApiResult.ok(service.usageImpact(id,scope(r)));}
+    @GetMapping("/{id}")public ApiResult<RobotView>get(@PathVariable Long id,HttpServletRequest r){return ApiResult.ok(service.getRobot(id,scope(r)));}
+    @PutMapping("/{id}")public ApiResult<Void>update(@PathVariable Long id,@RequestBody RobotRequest req,HttpServletRequest r){service.updateRobot(id,req,scope(r));return ApiResult.ok();}
+    @DeleteMapping("/{id}")public ApiResult<Void>delete(@PathVariable Long id,HttpServletRequest r){service.deleteRobot(id,scope(r));return ApiResult.ok();}
+    @PostMapping("/{id}/test")public ApiResult<String>test(@PathVariable Long id,HttpServletRequest r){return ApiResult.ok(service.testRobot(id,scope(r)));}
 }

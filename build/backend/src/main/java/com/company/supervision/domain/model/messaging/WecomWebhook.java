@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 public class WecomWebhook {
     @TableId(type=IdType.AUTO) private Long id;
     private Long groupId;
+    private Long ownerAccountId;
+    private Integer isPublic;
     private String name;
     private String pushName;
     private String systemCode;

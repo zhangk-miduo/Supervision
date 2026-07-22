@@ -137,3 +137,23 @@ powershell -ExecutionPolicy Bypass -File .\scripts\deploy.ps1 -IdentityFile "$en
 - GitHub CLI 在本机不可用且安装进程无进展，因此未创建 PR；本次按用户明确要求，使用仓库现有 Git 凭据直接推送 main。
 - 推送前完成 git diff --cached --check 和敏感信息扫描，未发现服务器密码、管理员密码或 SSH 私钥进入版本库。
 - 推送后再次运行 scripts/deploy.ps1，确保服务器发布内容与 GitHub 最终提交一致；部署结果和健康检查见本节后续记录。
+
+## 2026-07-22 管理员菜单缺失排查
+
+用户反馈“账号管理”和“系统设置”菜单不见。代码检查确认菜单并未删除：当前界面中的设置入口名为“企业微信设置”，它和“账号管理”都在 `build/web/src/App.vue` 中通过 `isAdmin` 控制，仅当浏览器 `localStorage.supervision_user.roles` 包含精确角色码 `ADMIN` 时显示；对应路由还会在 `build/web/src/router/index.ts` 中进行相同校验，非管理员访问会被重定向到仪表盘。后端 `AuthInterceptor` 也只允许管理员调用 `/accounts`、`/settings` 和 `/wecom/sync`。
+
+本次最可能的直接原因是当前登录态中的角色不是 `ADMIN`，或仍保存着角色修正前的旧登录响应。角色只在登录时写入前端本地存储，数据库迁移后不会自动刷新已有页面中的用户信息，因此应先退出并重新登录，再确认登录响应的 `roles`。若重新登录后仍缺失，需要核对 `supervision_account_role` 中该账号是否绑定 `ADMIN`；现有 V9 迁移只会强制修正用户名恰好为 `admin` 的账号，自定义管理员用户名不会被该迁移覆盖。由于本地环境没有 Docker 运行时且没有生产登录态，本轮未直接读取生产账号角色数据，实际账号角色仍待现场确认。
+
+## 2026-07-23 V12 账号数据隔离迁移指南
+
+V12 `account_data_scope_public_robots` 为任务、执行、企微逻辑群和 webhook 增加账号归属，并为 webhook 增加默认私有的公开调用标识。迁移按旧任务 `created_by = supervision_account.username` 精确回填；执行从任务继承。旧机器人只有在数据库中能够确定唯一 ADMIN 账号时才自动归属，否则保持未归属且只允许管理员查看。迁移不会删除旧字段、任务、执行、机器人或投递记录。
+
+生产发布前必须备份数据库。V12 成功后，在 MySQL 中执行只读脚本：
+
+```bash
+docker compose exec -T mysql sh -lc 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" supervision' < scripts/report-account-data-scope.sql
+```
+
+实际执行时应按服务器安全方式提供密码，不要把密码写入命令历史或项目文件。重点核对 task、execution、webhook、wecom_group 的 total、assigned、unassigned；任何未归属数据都不会出现在普通账号列表中。若存在未归属记录，应先确认真实创建账号，再设计受控认领，禁止直接批量猜测归属。
+
+部署后至少使用账号 A、账号 B 和管理员验证：A/B 私有数据互不可见；管理员可看全部但不能修改他人数据；A 公开机器人后 B 可选并发送；A 收回共享后 B 的后续执行停止且日志显示共享已收回；组织人员对 A/B 仍是同一共享数据集。本地已完成 Maven 测试和 Vite 构建，但尚未执行生产备份、V12 实际迁移或三账号冒烟。

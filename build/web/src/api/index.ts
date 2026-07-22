@@ -37,7 +37,11 @@ export interface Task {
   description?: string
   status: number
   scheduleType: number
-  createdBy?: string
+  creatorAccountId?: number
+  creatorUsername?: string
+  creatorDisplayName?: string
+  ownedByCurrentUser?: boolean
+  canEdit?: boolean
   createdAt?: string
   updatedAt?: string
 }
@@ -70,6 +74,17 @@ export interface Robot {
   webhookUrl: string
   template?: string
   createdAt?: string
+  groupId?: number
+  groupName?: string
+  pushName?: string
+  pushStatus?: number
+  isPublic?: boolean
+  canUse?: boolean
+  creatorAccountId?: number
+  creatorUsername?: string
+  creatorDisplayName?: string
+  ownedByCurrentUser?: boolean
+  canEdit?: boolean
 }
 
 export interface Execution {
@@ -91,13 +106,12 @@ export interface TaskCreateRequest {
   name: string
   description?: string
   scheduleType: number
-  createdBy?: string
   cronExpression?: string
   nodes: NodeInput[]
 }
 
 // ---------- 任务 ----------
-export function listTasks(params: { name?: string; page?: number; size?: number }) {
+export function listTasks(params: { name?: string; creatorAccountId?: number; page?: number; size?: number }) {
   return http.get<ApiResult<Page<Task>>>('/tasks', { params })
 }
 export function getTask(id: number) {
@@ -117,11 +131,11 @@ export function executeTask(id: number) {
 }
 
 // ---------- 机器人 ----------
-export function listRobots(params: { name?: string; page?: number; size?: number }) {
+export function listRobots(params: { name?: string; view?: 'owned'|'public'|'all'; creatorAccountId?: number; page?: number; size?: number }) {
   return http.get<ApiResult<Page<Robot>>>('/robots', { params })
 }
 export function listSelectableRobots() {
-  return http.get<ApiResult<Array<{ id: number; name: string }>>>('/robots/selectable')
+  return http.get<ApiResult<Array<{ id:number; groupId:number; groupName:string; pushName:string; label:string; isPublic:boolean; creatorAccountId?:number; creatorUsername?:string; creatorDisplayName?:string }>>>('/robots/selectable')
 }
 export function getRobot(id: number) {
   return http.get<ApiResult<Robot>>('/robots/' + id)
@@ -138,9 +152,12 @@ export function deleteRobot(id: number) {
 export function testRobot(id: number) {
   return http.post<ApiResult<string>>('/robots/' + id + '/test')
 }
+export function getRobotUsageImpact(id:number) {
+  return http.get<ApiResult<{externalTaskCount:number}>>('/robots/' + id + '/usage-impact')
+}
 
 // ---------- 执行日志 ----------
-export function listExecutions(params: { taskId?: number; status?: string; page?: number; size?: number }) {
+export function listExecutions(params: { taskId?: number; status?: string; creatorAccountId?: number; page?: number; size?: number }) {
   return http.get<ApiResult<Page<any>>>('/executions', { params })
 }
 export function getExecution(id: number) {
