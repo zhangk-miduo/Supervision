@@ -3,12 +3,14 @@ package com.company.supervision.application.identity;
 import com.company.supervision.domain.model.identity.Account;
 import com.company.supervision.domain.model.identity.LoginAudit;
 import com.company.supervision.domain.model.identity.Role;
+import com.company.supervision.domain.model.organization.Person;
 import com.company.supervision.entity.dto.auth.ChangePasswordRequest;
 import com.company.supervision.entity.dto.auth.LoginRequest;
 import com.company.supervision.entity.dto.auth.LoginResponse;
 import com.company.supervision.infrastructure.repository.identity.AccountMapper;
 import com.company.supervision.infrastructure.repository.identity.LoginAuditMapper;
 import com.company.supervision.infrastructure.repository.identity.RoleMapper;
+import com.company.supervision.infrastructure.repository.organization.PersonMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -28,13 +30,15 @@ public class AuthService {
     private final AccountMapper accountMapper;
     private final RoleMapper roleMapper;
     private final LoginAuditMapper auditMapper;
+    private final PersonMapper personMapper;
     private final StringRedisTemplate redis;
     private final ObjectMapper objectMapper;
     private final PasswordEncoder encoder;
 
-    public AuthService(AccountMapper accountMapper, RoleMapper roleMapper, LoginAuditMapper auditMapper,
+    public AuthService(AccountMapper accountMapper, RoleMapper roleMapper, LoginAuditMapper auditMapper, PersonMapper personMapper,
                        StringRedisTemplate redis, ObjectMapper objectMapper, PasswordEncoder encoder) {
         this.accountMapper=accountMapper; this.roleMapper=roleMapper; this.auditMapper=auditMapper;
+        this.personMapper=personMapper;
         this.redis=redis; this.objectMapper=objectMapper; this.encoder=encoder;
     }
 
@@ -58,6 +62,8 @@ public class AuthService {
         }
         account.setFailedLoginCount(0); account.setLockedUntil(null); account.setLastLoginAt(LocalDateTime.now());
         accountMapper.updateById(account);
+        Person person=account.getPersonId()==null?null:personMapper.selectById(account.getPersonId());
+        account.setDisplayName(resolveDisplayName(account,person));
         List<String> roles=roleMapper.selectByAccountId(account.getId()).stream().map(Role::getCode).toList();
         boolean limited=Integer.valueOf(1).equals(account.getMustChangePassword());
         String token=createSession(account, roles, limited);
@@ -116,6 +122,12 @@ public class AuthService {
         if(password==null || password.length()<10 || !password.matches(".*[A-Za-z].*") || !password.matches(".*\\d.*"))
             throw new IllegalArgumentException("Password must be at least 10 characters and include letters and numbers");
         if(username!=null && password.toLowerCase().contains(username.toLowerCase())) throw new IllegalArgumentException("Password must not contain username");
+    }
+
+    static String resolveDisplayName(Account account, Person person) {
+        if(person!=null&&person.getName()!=null&&!person.getName().isBlank())return person.getName();
+        if(account.getDisplayName()!=null&&!account.getDisplayName().isBlank())return account.getDisplayName();
+        return account.getUsername();
     }
 
     private void audit(Long id,String username,String event,boolean success,String ip,String detail){ LoginAudit a=new LoginAudit(); a.setAccountId(id); a.setUsername(username); a.setEventType(event); a.setSuccess(success?1:0); a.setIpAddress(ip); a.setDetail(detail); auditMapper.insert(a); }

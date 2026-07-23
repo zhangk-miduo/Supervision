@@ -18,6 +18,7 @@
 - [x] 1.5 实现账号与人员的可选一对一绑定约束。
 - [x] 1.6 增加登录页、首次改密页、账号管理页和路由守卫。
 - [ ] 1.7 补充认证、越权、锁定、重置及会话撤销测试。
+- [x] 1.8 Resolve the login display name from the bound organization person first and test fallback behavior.
 
 ## 2. 企微配置与组织同步
 
@@ -30,6 +31,7 @@
 - [x] 2.7 实现同步锁、同步统计、错误明细和同步日志查询。
 - [x] 2.8 增加系统设置、组织树、人员列表和同步记录页面，禁止手工新增人员。
 - [ ] 2.9 补充重复同步、部分失败、离职停用和配置权限不足测试。
+- [x] 2.10 Decouple shared organization queries from administrator-only synchronization and logs.
 
 ## 3. 企微消息领域
 

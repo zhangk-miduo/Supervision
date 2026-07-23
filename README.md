@@ -1,662 +1,211 @@
 # Supervision
-企业智能督办平台 将企业中依赖人工推动的事情，通过自动化规则变成系统主动发现、主动提醒、主动跟进。
 
-选择 **Supervision** 是一个更偏企业管理产品定位的命名，相比 ExecFlow，它更贴近你最初的产品愿景：
+企业智能督办平台，将依赖人工记忆和跟进的管理事项，转化为可配置、可调度、可追踪的自动化督办任务。
 
-> 企业智能督办平台
-> 帮助企业把“靠人记忆推动的管理动作”，变成自动触发、自动提醒、自动反馈的执行流程。
+当前版本围绕企业微信场景提供任务编排、定时调度、消息触达、组织同步、账号权限和执行审计能力，并通过 Docker Compose 交付完整运行环境。
 
-我认为这个名字更适合作为企业内部平台产品名。
+## 当前能力
 
-不过建议不要直接使用 `Supervision` 作为代码仓库名，因为英文语义上有几个问题：
+### 督办任务
 
-* Supervision 本身更偏“监督、监管、监控”
-* 容易让人理解成：
+- 通过五步向导配置基本信息、调度规则、接收范围、消息内容和发送测试。
+- 支持手动、单次、每天、国家法定工作日、每周、每月、固定间隔和 Cron 调度。
+- 支持预览未来执行时间、立即执行、失败重试、重叠执行策略和误触发策略。
+- 支持文本、Markdown、Markdown v2、图片、图文、文件、语音和模板卡片消息。
+- 支持一个任务选择多个目标群，并在可能重复触达时给出提示。
 
-  * 安防监控
-  * 运维监控
-  * 人员监管
-* 缺少“自动化执行”的含义
+### 企业微信集成
 
-建议采用：
+- 管理企业微信群机器人 Webhook，支持连通性测试、启停及公开共享。
+- 支持群机器人消息和企业微信应用消息两种触达渠道。
+- 配置企业微信应用凭据，校验连接并同步部门和人员。
+- 按部门、姓名、状态、性别和同步状态查询组织人员。
+- 保存消息投递记录，支持消息预览和测试发送。
 
-# 推荐项目名称
+### 账号、权限与审计
 
-## **Supervision**
+- 使用账号密码登录和 Bearer Token 会话；首次使用临时密码时强制修改密码。
+- 提供 `ADMIN` 与普通用户角色，账号管理和企业微信配置仅管理员可用。
+- 任务、执行记录和私有机器人按创建账号隔离；公开机器人可供其他账号选择，但仅创建者可以修改。
+- 删除、停用或收回共享机器人前检查对其他账号启用任务的影响。
+- Webhook 等敏感配置加密存储，并对日志中的敏感信息做脱敏处理。
 
-全称：
+### 运行与观测
 
-# Enterprise Intelligent Supervision Platform
+- 仪表盘展示任务和执行概况。
+- 执行日志支持分页、状态筛选和详情查看。
+- MySQL 持久化业务数据，Redis 保存会话和运行状态，RabbitMQ 承载异步通知，Quartz 负责调度。
+- Flyway 管理数据库结构演进，Spring Boot Actuator 和 `/api/health` 提供健康检查基础。
 
-中文：
+## 系统架构
 
-# 企业智能督办平台
-
----
-
-# 代码仓库命名建议
-
-推荐：
-
-```
-supervision-platform
-```
-
-或者：
-
-```
-supervision
-```
-
-企业级项目更推荐：
-
-```
-supervision-platform
-```
-
-因为未来可能扩展：
-
-```
-supervision-platform
-
-├── supervision-server
-├── supervision-web
-├── supervision-gateway
-├── supervision-job
-├── supervision-docs
-
+```text
+浏览器
+  │
+  ▼
+Nginx / Vue 3 管理端
+  │  /api
+  ▼
+Spring Boot API
+  ├─ 认证、账号与数据权限
+  ├─ 任务、调度与执行引擎
+  ├─ 企业微信组织与消息服务
+  └─ 执行记录与投递审计
+       │
+       ├─ MySQL 8
+       ├─ Redis 7
+       ├─ RabbitMQ 3.13
+       └─ 企业微信 API / 群机器人 Webhook
 ```
 
----
+后端采用单模块 DDD 分层组织代码：
 
-# Maven模块命名建议
+- `api`：HTTP 接口和统一异常处理
+- `application`：任务、调度、账号、组织和消息用例
+- `domain`：任务、执行、身份、组织、消息等领域模型及执行引擎
+- `infrastructure`：MyBatis-Plus、Quartz、Redis、RabbitMQ、企业微信客户端及安全实现
+- `entity/dto`：接口输入输出模型
 
-结合你当前 Java + Spring Boot + DDD 架构：
+## 技术栈
 
-```
-com.company.supervision
-```
+| 范围 | 技术 |
+| --- | --- |
+| 后端 | Java 17、Spring Boot 3.2.2、MyBatis-Plus 3.5.5、Quartz、Flyway |
+| 前端 | Vue 3、TypeScript、Vite 5、Element Plus、Pinia、Axios |
+| 基础设施 | MySQL 8.0、Redis 7、RabbitMQ 3.13、Nginx |
+| 交付 | Docker、Docker Compose |
 
-模块：
+## 快速开始
 
-```
-supervision
+### 1. 准备环境
 
-├── supervision-api
+- Docker Engine
+- Docker Compose v2
+- 建议至少 2 GB 可用内存
 
-├── supervision-application
+本机不需要安装 Java、Maven、Node.js、MySQL、Redis 或 RabbitMQ。
 
-├── supervision-domain
+### 2. 配置环境变量
 
-├── supervision-infrastructure
+复制示例文件：
 
-├── supervision-entity
-
-└── supervision-web
-
-```
-
----
-
-# 数据库命名
-
-建议：
-
-```
-supervision
+```bash
+cp .env.example .env
 ```
 
-表：
-
-```
-supervision_task
-
-supervision_task_node
-
-supervision_task_execution
-
-supervision_wechat_robot
-
-supervision_schedule
-
-```
-
----
-
-# Redis Key规范
-
-例如：
-
-任务锁：
-
-```
-supervision:task:lock:{taskId}
-```
-
-执行上下文：
-
-```
-supervision:execution:{executionId}
-```
-
----
-
-# RabbitMQ命名
-
-Exchange：
-
-```
-supervision.exchange
-```
-
-Queue：
-
-```
-supervision.notification.queue
-```
-
-RoutingKey：
-
-```
-supervision.wechat.send
-```
-
----
-
-# README.md（Supervision版）
-
-下面是调整后的项目 README。
-
----
-
-```markdown
-# Supervision
-
-## Enterprise Intelligent Supervision Platform
-
-企业智能督办与自动化执行平台
-
-
----
-
-## 1. 项目介绍
-
-
-Supervision 是一个面向企业内部管理场景的智能督办自动化平台。
-
-
-通过：
-
-- 定时触发
-- 数据查询
-- 规则判断
-- 消息通知
-
-
-帮助企业将大量依赖人工推动的管理事项自动化。
-
-
----
-
-## 产品理念
-
-
-传统管理模式：
-
-
-人工检查
-
-↓
-
-发现问题
-
-↓
-
-人工通知
-
-↓
-
-人工跟进
-
-
-
-Supervision：
-
-
-系统自动触发
-
-↓
-
-自动查询数据
-
-↓
-
-智能判断
-
-↓
-
-自动提醒
-
-↓
-
-记录执行结果
-
-
-
----
-
-## 2. 核心能力
-
-
-### 自动化任务 Task
-
-
-创建企业管理任务。
-
-
-例如：
-
-- 日报提醒
-- 周报提醒
-- 项目进度提醒
-- 数据异常提醒
-- 系统巡检提醒
-
-
-
----
-
-### 流程节点 Node
-
-
-任务由多个节点组成：
-
-
-```
-
-Trigger
-
-↓
-
-HTTP Request
-
-↓
-
-Condition
-
-↓
-
-Notification
-
-```
-
-
-
-支持节点：
-
-|节点|说明|
-|-|-|
-|HTTP Node|调用业务接口|
-|Condition Node|规则判断|
-|Wechat Node|企业微信通知|
-
-
-
-未来支持：
-
-- SQL Node
-- Email Node
-- DingTalk Node
-- Feishu Node
-- AI Node
-
-
-
----
-
-## 3. 技术架构
-
-
-```
-
-```
-         Supervision
-
-
-              |
-
-       Web Management
-
-
-              |
-
-      Spring Boot API
-
-
-              |
-```
-
----
-
-MySQL
-
-Redis
-
-RabbitMQ
-
-```
-              |
-
-    Task Execution Engine
-
-
-              |
-```
-
----
-
-HTTP
-
-Condition
-
-Wechat
-
-```
-
-
-
----
-
-## 4. 技术栈
-
-
-Backend:
-
-- Java 17
-- Spring Boot 3
-- MyBatis-Plus
-- MySQL 8
-- Redis 7
-- RabbitMQ
-- Quartz
-
-
-Frontend:
-
-- Vue 3
-- TypeScript
-- Vite
-- Element Plus
-- Pinia
-
-
-
-Deployment:
-
-- Docker Compose
-
-
-
----
-
-## 5. 核心模型
-
-
-### Task
-
-
-自动化任务。
-
-
-```
-
-Task
-
-id
-
-name
-
-status
-
-schedule
-
-```
-
-
-
----
-
-### TaskNode
-
-
-执行节点。
-
-
-```
-
-TaskNode
-
-id
-
-taskId
-
-nodeType
-
-config
-
-order
-
-```
-
-
-
----
-
-### Execution
-
-
-执行记录。
-
-
-```
-
-TaskExecution
-
-id
-
-taskId
-
-status
-
-result
-
-time
-
-```
-
-
-
----
-
-## 6. 执行流程
-
-
-示例：
-
-日报提醒
-
-
-
-```
-
-17:30
-
-↓
-
-Quartz触发
-
-↓
-
-HTTP查询日报数据
-
-↓
-
-判断未提交人数
-
-↓
-
-发送企业微信
-
-↓
-
-保存执行日志
-
-```
-
-
-
----
-
-## 7. 项目结构
-
-
-```
-
-supervision-platform
-
-├── supervision-server
-
-├── supervision-api
-
-├── supervision-domain
-
-├── supervision-application
-
-├── supervision-infrastructure
-
-├── supervision-web
-
-├── docs
-
-└── docker
-
-```
-
-
-
----
-
-## 8. Roadmap
-
-
-### V1.0
-
-企业微信自动督办
-
-
-完成：
-
-- 任务管理
-- 定时调度
-- HTTP节点
-- 条件节点
-- 企业微信通知
-- 执行日志
-
-
-
----
-
-
-### V2.0
-
-
-组织能力增强：
-
-- 企业微信组织同步
-- 动态@人员
-- 用户权限
-- 多租户
-
-
-
----
-
-
-### V3.0
-
-
-智能化：
-
-- AI生成督办任务
-- AI分析执行风险
-- 企业智能运营助手
-
-
-
----
-
-## 9. Design Principle
-
-
-### 简单
-
-不做复杂BPM。
-
-
-### 可扩展
-
-通过Node模型扩展能力。
-
-
-### 企业级
-
-支持：
-
-- Docker部署
-- 高可用
-- 日志审计
-- 权限扩展
-
-
-
----
-
-## Supervision
-
-
-让企业管理，从人工推动走向智能督办。
-
-```
-
-
-
----
-
-## 部署
-
-完整部署与运维说明见 **[DEPLOYMENT.md](./DEPLOYMENT.md)**。
-
-快速上线（需本机已启动 Docker 守护进程）：
+编辑 `.env`，替换所有占位值。至少需要配置：
+
+| 变量 | 用途 |
+| --- | --- |
+| `MYSQL_ROOT_PASSWORD` | MySQL root 密码 |
+| `DB_USERNAME` / `DB_PASSWORD` | 应用数据库账号和密码 |
+| `RABBITMQ_USERNAME` / `RABBITMQ_PASSWORD` | RabbitMQ 账号和密码 |
+| `SUPERVISION_CRYPTO_KEY` | 敏感配置加密密钥，建议使用 `openssl rand -base64 32` 生成 |
+| `SUPERVISION_ADMIN_USERNAME` | 初始管理员用户名 |
+| `SUPERVISION_ADMIN_PASSWORD` | 初始管理员密码 |
+
+`.env` 包含敏感信息，禁止提交到版本库。
+
+### 3. 构建并启动
 
 ```bash
 docker compose up -d --build
 ```
 
-- 管理端：http://localhost
-- 后端 API：http://localhost/api （健康检查 http://localhost/api/health ）
-- RabbitMQ 控制台：http://localhost:15672
+启动完成后访问：
 
-仓库实际结构：
+- 管理端：<http://localhost:8002>
+- 健康检查：<http://localhost:8002/api/health>
 
+首次登录使用 `.env` 中配置的初始管理员账号。系统会要求使用临时密码的账号修改密码。
+
+### 4. 检查运行状态
+
+```bash
+docker compose ps
+docker compose logs -f api
 ```
+
+健康检查：
+
+```bash
+curl -f http://localhost:8002/api/health
+```
+
+## 首次使用建议
+
+1. 使用初始管理员账号登录并修改密码。
+2. 在“企业微信设置”中填写企业 ID、应用 AgentId 和 Secret，完成校验。
+3. 同步企业微信组织，确认部门和人员数据。
+4. 在“机器人管理”中添加群机器人 Webhook，并执行配置测试。
+5. 新建督办任务，配置调度、触达范围和消息内容。
+6. 先执行消息预览和测试发送，再保存并启用任务。
+7. 在“执行日志”中确认运行及投递结果。
+
+企业微信应用配置和群机器人配置的具体说明见 [企业微信配置指南](doc/guide.supervision.wecom-configuration.md)。
+
+## 本地开发与验证
+
+### 前端
+
+```bash
+cd build/web
+npm install
+npm run dev
+```
+
+生产构建验证：
+
+```bash
+cd build/web
+npm run build
+```
+
+### 后端
+
+项目后端要求 Java 17。当前约定通过 Docker 内的 Maven 和 JDK 17 编译、测试：
+
+```bash
+docker compose build api
+```
+
+`build/backend/Dockerfile` 在构建镜像时执行 `mvn clean package`，包含后端测试。
+
+### 冒烟验证
+
+完整环境启动后，建议至少完成以下流程：
+
+1. 调用健康检查。
+2. 登录管理端。
+3. 创建一个手动任务。
+4. 立即执行任务。
+5. 在执行日志中查询到对应记录。
+
+## 项目结构
+
+```text
 Supervision/
-├── docker-compose.yml        # 服务编排
-├── docker/nginx/default.conf  # 前端反代
-├── build/backend/           # Spring Boot 3.2 / Java 17
-├── build/web/               # Vue3 + TS + Element Plus
-├── doc/                    # 产品 / 技术分析文档
-├── specs/                  # 需求规格（Ralph 格式）
-├── IMPLEMENTATION_PLAN.md  # 实施计划
-└── DEPLOYMENT.md           # 部署指南
+├─ build/
+│  ├─ backend/                  # Spring Boot 后端及数据库迁移
+│  └─ web/                      # Vue 3 管理端
+├─ docker/
+│  ├─ nginx/                    # Web 静态资源和 API 反向代理
+│  └─ rabbitmq/                 # RabbitMQ 配置
+├─ doc/                         # 产品、设计、指南、报告与工程债务文档
+├─ openspec/                    # OpenSpec 变更规格与任务
+├─ specs/                       # 需求与验收规格
+├─ docker-compose.yml           # 完整运行环境编排
+├─ .env.example                 # 环境变量模板
+├─ DEPLOYMENT.md                # 详细部署和排错指南
+└─ README.md
 ```
+
+## 已知边界
+
+- 当前交付形态为单体后端和单实例 Quartz，尚未提供多实例高可用调度方案。
+- 当前主要触达渠道是企业微信；钉钉、飞书、邮件和 AI 节点未在当前实现中提供。
+- 群机器人无法保证被选择的企业微信组织成员一定存在于目标群，因此 `@` 提醒受群成员关系限制。
+- 工作日调度依赖系统内置或已导入的工作日历覆盖范围，生产使用前应检查目标年份。
+- Compose 默认仅将 Web 服务映射到宿主机 `8002` 端口，数据库、Redis、RabbitMQ 和后端 API 不直接暴露。
+
+更完整的部署、迁移和排错信息见 [DEPLOYMENT.md](DEPLOYMENT.md) 与 [部署迁移指南](doc/guide.supervision.deployment-migration.md)。
