@@ -19,7 +19,7 @@ spring:
     rabbitmq:
       host: ${RABBITMQ_HOST:rabbitmq}
       port: ${RABBITMQ_PORT:5672}
-      username: ${RABBITMQ_USERNAME:guest}
+      username: ${RABBITMQ_USERNAME:}
       password: ${RABBITMQ_PASSWORD:}
   flyway:
     enabled: true
@@ -54,7 +54,7 @@ logging:
     org.springframework.web: warn
 
 supervision:
-  crypto-key: ${SUPERVISION_CRYPTO_KEY:[removed-secret]}
+  crypto-key: ${SUPERVISION_CRYPTO_KEY:}
   bootstrap-admin:
     username: ${SUPERVISION_ADMIN_USERNAME:admin}
     password: ${SUPERVISION_ADMIN_PASSWORD:}

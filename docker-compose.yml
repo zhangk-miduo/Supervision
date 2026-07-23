@@ -13,14 +13,16 @@ services:
     restart: unless-stopped
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --innodb-buffer-pool-size=64M
     environment:
-      MYSQL_ROOT_PASSWORD: [removed-secret]
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
       MYSQL_DATABASE: supervision
+      MYSQL_USER: ${DB_USERNAME:-supervision}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
       TZ: Asia/Shanghai
     volumes:
       - mysql-data:/var/lib/mysql
       - ./build/backend/src/main/resources/db:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p[removed-secret]"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -40,8 +42,8 @@ services:
     container_name: supervision-rabbitmq
     restart: unless-stopped
     environment:
-      RABBITMQ_DEFAULT_USER: supervision
-      RABBITMQ_DEFAULT_PASS: [removed-secret]
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-supervision}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in .env}
     volumes:
       - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     healthcheck:
@@ -73,22 +75,22 @@ services:
       DB_HOST: mysql
       DB_PORT: "3306"
       DB_NAME: supervision
-      DB_USERNAME: supervision
-      DB_PASSWORD: [removed-secret]
-      SUPERVISION_CRYPTO_KEY: ${SUPERVISION_CRYPTO_KEY}
+      DB_USERNAME: ${DB_USERNAME:-supervision}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      SUPERVISION_CRYPTO_KEY: ${SUPERVISION_CRYPTO_KEY:?Set SUPERVISION_CRYPTO_KEY in .env}
       SUPERVISION_ADMIN_USERNAME: ${SUPERVISION_ADMIN_USERNAME:-admin}
       SUPERVISION_ADMIN_PASSWORD: ${SUPERVISION_ADMIN_PASSWORD:-}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: "5672"
-      RABBITMQ_USERNAME: supervision
-      RABBITMQ_PASSWORD: [removed-secret]
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-supervision}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in .env}
       # Spring Boot 瑙勮寖鐜鍙橀噺锛堢‘淇濈粦瀹氬埌 spring.rabbitmq.*锛?
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: "5672"
-      SPRING_RABBITMQ_USERNAME: supervision
-      SPRING_RABBITMQ_PASSWORD: [removed-secret]
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-supervision}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in .env}
       TZ: Asia/Shanghai
       # 閽堝 2G 鍐呭瓨鏈嶅姟鍣ㄦ敹绱у爢鍐呭瓨
       JAVA_OPTS: "-Xms256m -Xmx512m -XX:+UseG1GC -Duser.timezone=Asia/Shanghai"

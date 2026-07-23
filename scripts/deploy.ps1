@@ -1,6 +1,6 @@
 ﻿[CmdletBinding()]
 param(
-    [string]$Server = "[redacted-public-host]",
+    [string]$Server = $env:SUPERVISION_SERVER,
     [string]$User = "ubuntu",
     [int]$Port = 22,
     [string]$RemoteDir = "/opt/supervision",
@@ -8,6 +8,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ([string]::IsNullOrWhiteSpace($Server)) {
+    throw "Specify the deployment server with -Server or SUPERVISION_SERVER."
+}
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $archive = Join-Path ([System.IO.Path]::GetTempPath()) "supervision-$stamp.tar.gz"
