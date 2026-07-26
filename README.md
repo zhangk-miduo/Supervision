@@ -1,8 +1,46 @@
 # Supervision
 
+[![CI](https://github.com/zhangk-miduo/Supervision/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/zhangk-miduo/Supervision/actions/workflows/ci-cd.yml)
+[![License](https://img.shields.io/github/license/zhangk-miduo/Supervision)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/zhangk-miduo/Supervision)](https://github.com/zhangk-midoo/Supervision/releases)
+[![Last Commit](https://img.shields.io/github/last-commit/zhangk-midoo/Supervision)](https://github.com/zhangk-midoo/Supervision/commits/main)
+
+> 中文文档即为本文件。English documentation: [README_EN.md](README_EN.md)
+
 企业智能督办平台，将依赖人工记忆和跟进的管理事项，转化为可配置、可调度、可追踪的自动化督办任务。
 
 当前版本围绕企业微信场景提供任务编排、定时调度、消息触达、组织同步、账号权限和执行审计能力，并通过 Docker Compose 交付完整运行环境。
+
+## 为什么需要 Supervision
+
+很多团队用企业微信群机器人做定时提醒，但很快会遇到这些痛点：
+
+- 提醒靠人工记忆或零散的 cron 脚本，容易漏跟、重复、且无从追溯；
+- 群机器人 Webhook 散落在各处文档里，离职 / 轮换时难以接管；
+- 发送了没有记录，出了错不知道是谁、什么时候、发给了谁；
+- 不同部门各写一套脚本，无法统一管控账号权限与审计。
+
+Supervision 把这些“人工 + 脚本”的督办动作，收敛成一个可配置、可调度、可审计的平台：
+
+| 维度 | 纯人工 / 群机器人脚本 | Supervision |
+| --- | --- | --- |
+| 调度配置 | 改代码或记日历 | 向导式，支持 Cron / 工作日 / 多种周期 |
+| 触达记录 | 无 | 全量投递记录 + 预览 + 测试发送 |
+| 账号权限 | 无 | ADMIN / 普通用户角色 + 数据隔离 |
+| 审计 | 无 | 执行日志 + 敏感信息脱敏 |
+| 可维护性 | 脚本散落 | 统一平台 + Docker Compose 交付 |
+
+## 界面预览
+
+| 登录页 | 仪表盘 |
+| --- | --- |
+| ![登录页](docs/assets/screenshot-login.png) | ![仪表盘](docs/assets/screenshot-dashboard.png) |
+
+| 任务配置向导 | 执行日志 |
+| --- | --- |
+| ![任务配置向导](docs/assets/screenshot-task-create.png) | ![执行日志](docs/assets/screenshot-execution-logs.png) |
+
+> 截图中的任务名称、账号、推送内容、执行结果等敏感信息已做脱敏处理。
 
 ## 当前能力
 
@@ -209,3 +247,27 @@ Supervision/
 - Compose 默认仅将 Web 服务映射到宿主机 `8002` 端口，数据库、Redis、RabbitMQ 和后端 API 不直接暴露。
 
 更完整的部署、迁移和排错信息见 [DEPLOYMENT.md](DEPLOYMENT.md) 与 [部署迁移指南](doc/guide.supervision.deployment-migration.md)。
+
+## 路线图
+
+基于当前“已知边界”，后续方向：
+
+- [ ] 多实例高可用调度（解除单体 Quartz 单点）
+- [ ] 扩展触达渠道：钉钉、飞书、邮件
+- [ ] AI 节点（智能生成督办内容与摘要）
+- [ ] 更丰富的工作日历与节假日数据源
+- [ ] 开放 API 与 Webhook 事件，便于集成第三方系统
+
+ roadmap 讨论欢迎在 [Issues](https://github.com/zhangk-midoo/Supervision/issues) / Discussions 提出。
+
+## 参与贡献
+
+欢迎 Issue、PR 与建议。开始前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)；开发环境搭建与验证流程见 [AGENTS.md](AGENTS.md)。本仓库要求将相关对话 / 任务整理进 `doc/`（详见 CONTRIBUTING 的“文档约定”）。
+
+## 安全
+
+如发现安全漏洞，请按 [SECURITY.md](SECURITY.md) 的流程私下反馈，勿在公开 Issue 披露。
+
+## 许可证
+
+[Apache License 2.0](LICENSE)。

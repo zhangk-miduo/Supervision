@@ -1,0 +1,38 @@
+name: Bug 报告
+description: 报告一个可复现的问题
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请先搜索是否已有相同 Issue。
+  - type: textarea
+    id: env
+    attributes:
+      label: 环境
+      description: 部署方式（Docker Compose / 本地）、版本或 commit、企业微信场景
+      placeholder: 如：Docker Compose, commit abc1234, 企业微信应用消息
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: 预期 vs 实际
+      description: 你期望发生什么？实际发生了什么？
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 一步步操作以复现问题
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志 / 报错
+      description: 相关日志（`docker compose logs -f api`），注意脱敏，勿包含密钥
+    validations:
+      required: false
