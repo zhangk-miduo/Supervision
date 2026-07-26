@@ -76,7 +76,10 @@ chmod 600 /opt/supervision/.env
 - GitHub Actions Run `30189367675` 完成首次生产发布，服务器健康接口返回 `ok`。
 - 运行镜像以完整 commit SHA 标记，`current` 指向对应 release 目录。
 - 发布前 MySQL 备份已生成并保存在 `/opt/backups/supervision/`。
-- 回滚演练结果将在第二个可部署版本生成后补录。
+- 第二版 `6f5ad6d87b71b4e2748786e8bd0f6ee08c28c225` 自动发布成功，两个 release 均被保留。
+- Actions Run `30189918169` 将生产回滚至首版，`current`、API 镜像标签同步切换，健康接口返回 `ok`。
+- Actions Run `30189963282` 使用同一入口切回第二版并通过健康检查。
+- 回滚前均自动生成 MySQL 备份；演练未执行高风险数据库覆盖恢复。
 ### 方法 B：服务器命令行回滚
 
 ```bash
