@@ -13,6 +13,9 @@ if ([string]::IsNullOrWhiteSpace($Server)) {
 }
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$releaseId = (& git -C $repoRoot rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0 -or $releaseId -notmatch '^[0-9a-f]{40}$') { throw "Unable to resolve the current Git commit SHA." }
+
 $archive = Join-Path ([System.IO.Path]::GetTempPath()) "supervision-$stamp.tar.gz"
 $remoteArchive = "/tmp/supervision-$stamp.tar.gz"
 $remoteRunner = "/tmp/supervision-deploy-$stamp.sh"
@@ -51,7 +54,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "远端执行脚本上传失败" }
 
     Write-Host "[3/4] 远端备份、构建并更新服务..."
-    $remoteCommand = "chmod 700 '$remoteRunner' && '$remoteRunner' '$remoteArchive' '$RemoteDir'"
+    $remoteCommand = "chmod 700 '$remoteRunner' && SUPERVISION_APP_ROOT='$RemoteDir' '$remoteRunner' deploy '$remoteArchive' '$releaseId'"
     & $sshCommand @sshOptions "${User}@${Server}" $remoteCommand
     if ($LASTEXITCODE -ne 0) { throw "远端部署失败；服务器已保留部署前备份，请检查上方日志" }
 

@@ -1,5 +1,9 @@
 # Supervision 部署指南
 
+> Automatic deployment and rollback guide:
+> [`doc/guide.supervision.cicd-rollback.md`](doc/guide.supervision.cicd-rollback.md)
+
+
 企业智能督办平台（Supervision）一键部署文档。基于 **Docker Compose** 编排 MySQL / Redis / RabbitMQ / Spring Boot API / Vue3 管理端 五个服务。
 
 ---

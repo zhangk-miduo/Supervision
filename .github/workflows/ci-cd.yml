@@ -1,0 +1,113 @@
+name: CI and production deployment
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Operation to perform
+        required: true
+        type: choice
+        default: deploy
+        options: [deploy, rollback]
+      release:
+        description: Existing release SHA for rollback (required for rollback)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supervision-production
+  cancel-in-progress: false
+
+jobs:
+  frontend:
+    if: github.event_name != 'workflow_dispatch' || inputs.operation == 'deploy'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: build/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: build/web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  backend:
+    if: github.event_name != 'workflow_dispatch' || inputs.operation == 'deploy'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend and run Maven tests
+        run: docker build --tag supervision-api-ci:${GITHUB_SHA} build/backend
+
+  deploy:
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && inputs.operation == 'deploy')
+    needs: [frontend, backend]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Create release archive
+        run: git archive --format=tar.gz --output="/tmp/supervision-${GITHUB_SHA}.tar.gz" HEAD
+      - name: Upload and deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          remote_archive="/tmp/supervision-${GITHUB_SHA}.tar.gz"
+          remote_runner="/tmp/supervision-deploy-${GITHUB_SHA}.sh"
+          scp -P "$DEPLOY_PORT" "/tmp/supervision-${GITHUB_SHA}.tar.gz" "$DEPLOY_USER@$DEPLOY_HOST:$remote_archive"
+          scp -P "$DEPLOY_PORT" scripts/deploy-server.sh "$DEPLOY_USER@$DEPLOY_HOST:$remote_runner"
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" "chmod 700 '$remote_runner' && '$remote_runner' deploy '$remote_archive' '$GITHUB_SHA'"
+
+  rollback:
+    if: github.event_name == 'workflow_dispatch' && inputs.operation == 'rollback'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate release
+        env:
+          RELEASE: ${{ inputs.release }}
+        run: |
+          [[ "$RELEASE" =~ ^[0-9a-fA-F]{40}$ ]] || { echo 'release must be a full 40-character Git commit SHA'; exit 1; }
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Roll back application
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          RELEASE: ${{ inputs.release }}
+        run: |
+          remote_runner="/tmp/supervision-rollback-${GITHUB_RUN_ID}.sh"
+          scp -P "$DEPLOY_PORT" scripts/deploy-server.sh "$DEPLOY_USER@$DEPLOY_HOST:$remote_runner"
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" "chmod 700 '$remote_runner' && '$remote_runner' rollback '$RELEASE'"
