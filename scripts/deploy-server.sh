@@ -88,7 +88,16 @@ deploy_release() {
   local release_dir="$RELEASES_DIR/$release_id"
   local previous_dir
   previous_dir="$(readlink -f "$CURRENT_LINK" 2>/dev/null || true)"
-  [[ ! -e "$release_dir" ]] || die "Release already exists: $release_id"
+  if [[ -e "$release_dir" ]]; then
+    if [[ "$previous_dir" == "$release_dir" ]]; then
+      rm -f -- "$archive"
+      wait_for_health "$release_dir" || die "Current release $release_id is unhealthy"
+      log "Release is already current and healthy: $release_id"
+      return
+    fi
+    log "Replacing incomplete or inactive release $release_id"
+    rm -rf -- "$release_dir"
+  fi
 
   mkdir "$release_dir"
   tar -xzf "$archive" -C "$release_dir"

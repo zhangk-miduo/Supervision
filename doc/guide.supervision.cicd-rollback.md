@@ -1,6 +1,6 @@
 # Supervision 自动部署与版本回滚指南
 
-> **版本**：v1.0 | **日期**：2026-07-26 | **状态**：已落地
+> **版本**：v1.1 | **日期**：2026-07-26 | **状态**：已验证
 
 ## 适用场景
 
@@ -68,6 +68,15 @@ chmod 600 /opt/supervision/.env
 
 版本 SHA 可从成功部署的 Actions 记录或服务器版本列表取得。
 
+
+## 生产验证记录
+
+- 2026-07-26：GitHub `production` Environment 已创建，5 个部署 Secret 已配置。
+- Commit `f8bbca049bdf1321232a000d79e64c2d98cc3c1e` 的前端构建与后端 Docker/Maven 测试通过。
+- GitHub Actions Run `30189367675` 完成首次生产发布，服务器健康接口返回 `ok`。
+- 运行镜像以完整 commit SHA 标记，`current` 指向对应 release 目录。
+- 发布前 MySQL 备份已生成并保存在 `/opt/backups/supervision/`。
+- 回滚演练结果将在第二个可部署版本生成后补录。
 ### 方法 B：服务器命令行回滚
 
 ```bash
@@ -107,4 +116,4 @@ docker compose --project-name supervision --env-file /opt/supervision/.env \
 
 用户确认 GitHub Actions + SSH，要求开源仓库不包含敏感信息、支持版本回滚并提供教程。仓库此前已有 Compose 和部署脚本，但不存在 Actions，旧脚本仅备份且不会自动回切。本次影响 `.github/workflows/ci-cd.yml`、`scripts/deploy-server.sh`、`scripts/deploy.ps1`、`docker-compose.yml` 和部署文档。
 
-外部待配置项为 GitHub 授权、Environment Secrets 和服务器 SSH 公钥。用户曾在对话中提供登录口令，该口令未写入项目文件；应立即轮换。
+GitHub 授权、Environment Secrets 和服务器 SSH 公钥均已配置完成。用户曾在对话中提供登录口令，该口令未写入项目文件；应立即轮换。
