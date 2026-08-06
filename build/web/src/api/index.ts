@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const http = axios.create({
+export const http = axios.create({
   baseURL: '/api',
   timeout: 20000,
   headers: { 'Content-Type': 'application/json' }
@@ -12,9 +12,23 @@ http.interceptors.request.use((config) => {
   return config
 })
 
+let redirectingToLogin = false
+
 http.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject(error)
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('supervision_token')
+      localStorage.removeItem('supervision_user')
+
+      if (window.location.pathname !== '/login' && !redirectingToLogin) {
+        redirectingToLogin = true
+        window.location.replace('/login')
+      }
+    }
+
+    return Promise.reject(error)
+  }
 )
 
 export interface ApiResult<T> {
